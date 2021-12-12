@@ -4,15 +4,15 @@ const path = require("path");
 const Moment = require("moment");
 const MomentRange = require("moment-range");
 const moment = MomentRange.extendMoment(Moment);
-const { XlsParser } = require('simple-excel-to-json')
+const { XlsParser } = require("simple-excel-to-json");
 
 var parser = new XlsParser();
 (async () => {
   const workbook = new Excel.Workbook();
   const inputPath = path.normalize(input);
   const inputWorkbook = parser.parseXls2Json(inputPath, { isNested: true });
-  let data = inputWorkbook[0].map( r => Object.values(r));
-  data = data.slice(1);
+  let data = inputWorkbook[0].map((r) => Object.values(r));
+//   data = data.slice(1);
   const output = {
     price: {},
     total: {},
@@ -20,56 +20,68 @@ var parser = new XlsParser();
   };
   const startDate = moment("2020-07", "YYYY-MM").toDate().valueOf();
   const endDate = moment("2022-12", "YYYY-MM").toDate().valueOf();
+  const dateIndex = 4;
   data = data.filter((row) => {
-    const m = moment(row[2], "YYYY-MM-DD");
+    const m = moment(row[dateIndex], "YYYY-MM-DD");
     const mv = m.toDate().valueOf();
     return mv >= startDate && mv <= endDate;
   });
-  data = data.map(([client, type, date, monthes, count, price], i) => {
-    const m = moment(date, "YYYY-MM-DD");
-    const theMonth = m.format("YYYY-MM");
-    if (!output["price"][i]) {
-      output["price"][i] = {};
-    }
-    if (!output["count"][i]) {
-      output["count"][i] = {};
-    }
-    if (!output["total"][i]) {
-      output["total"][i] = {};
-    }
-    if (!output["price"][i][client]) {
-      output["price"][i][client] = {};
-    }
-    if (!output["count"][i][client]) {
-      output["count"][i][client] = {};
-    }
-    if (!output["total"][i][client]) {
-      output["total"][i][client] = {};
-    }
-    // handle client monthes
-    if (monthes > 1) {
-      const startMonth = moment(theMonth, "YYYY-MM");
-      const endMonth = moment(startMonth).add(
-        monthes === 1 ? 1 : monthes - 1,
-        "month"
-      );
-      const range = moment.range(startMonth, endMonth);
-      // console.log(range)
-
-      for (let date of range.by("month")) {
-        const m = date.format("YYYY-MM");
-        output["price"][i][client][m] = price;
-        output["count"][i][client][m] = count;
-        output["total"][i][client][m] = price * count;
+  data = data.map(
+    ([client, industry, type, sku, date, monthes, count, price], i) => {
+      const m = moment(date, "YYYY-MM-DD");
+      const theMonth = m.format("YYYY-MM");
+      if (!output["price"][i]) {
+        output["price"][i] = {};
       }
-    } else {
-      output["count"][i][client][theMonth] = count;
-      output["price"][i][client][theMonth] = price;
-      output["total"][i][client][theMonth] = price * count;
-    }
+      if (!output["count"][i]) {
+        output["count"][i] = {};
+      }
+      if (!output["total"][i]) {
+        output["total"][i] = {};
+      }
+      if (!output["price"][i][client]) {
+        output["price"][i][client] = {};
+      }
+      if (!output["count"][i][client]) {
+        output["count"][i][client] = {};
+      }
+      if (!output["total"][i][client]) {
+        output["total"][i][client] = {};
+      }
+      // handle client monthes
+      if (monthes > 1) {
+        const startMonth = moment(theMonth, "YYYY-MM");
+        const endMonth = moment(startMonth).add(
+          monthes === 1 ? 1 : monthes - 1,
+          "month"
+        );
+        const range = moment.range(startMonth, endMonth);
+        // console.log(range)
 
-    return [client, type, m.toDate().valueOf(), monthes, count, price];
-  });
+        for (let date of range.by("month")) {
+          const m = date.format("YYYY-MM");
+          output["price"][i][client][m] = price;
+          output["count"][i][client][m] = count;
+          output["total"][i][client][m] = price * count;
+        }
+      } else {
+        output["count"][i][client][theMonth] = count;
+        output["price"][i][client][theMonth] = price;
+        output["total"][i][client][theMonth] = price * count;
+      }
+
+      return [
+        client,
+        industry,
+        type,
+        sku,
+        m.toDate().valueOf(),
+        monthes,
+        count,
+        price,
+      ];
+    }
+  );
 
   const range = moment.range(startDate, endDate);
   // console.log(range)
@@ -80,16 +92,20 @@ var parser = new XlsParser();
   }
   // console.log(monthes);
 
-  data = data.map(([client, type, date, monthes, count, price]) => {
-    return [
-      client,
-      type,
-      moment(date).format("YYYY-MM-DD"),
-      monthes,
-      count,
-      price,
-    ];
-  });
+  data = data.map(
+    ([client, industry, type, sku, date, monthes, count, price]) => {
+      return [
+        client,
+        industry,
+        type,
+        sku,
+        moment(date).format("YYYY-MM-DD"),
+        monthes,
+        count,
+        price,
+      ];
+    }
+  );
   // const datesArr = Array.from(dataDates).map( d => moment(d) ).sort( (a,b) => a.toDate() - b.toDate()).map( m => m.format('YYYY-MM-DD'));
   // console.log(datesArr)
   // console.log(data)
@@ -97,13 +113,15 @@ var parser = new XlsParser();
   const priceSheet = workbook.addWorksheet("price");
   const countSheet = workbook.addWorksheet("count");
   const totalSheet = workbook.addWorksheet("total");
-  priceSheet.addRow(["", "SKU", ...monthes]);
-  countSheet.addRow(["", "SKU", ...monthes]);
-  totalSheet.addRow(["", "SKU", ...monthes]);
-  data.forEach(([client, type, _], i) => {
+  priceSheet.addRow(["", "行业", "客户类型", "SKU", ...monthes]);
+  countSheet.addRow(["", "行业", "客户类型", "SKU", ...monthes]);
+  totalSheet.addRow(["", "行业", "客户类型", "SKU", ...monthes]);
+  data.forEach(([client, industry, type, sku, _], i) => {
     priceSheet.addRow([
       client,
+      industry,
       type,
+      sku,
       ...monthes.map((d) => {
         if (!output["price"][i]) {
           return "";
@@ -116,7 +134,9 @@ var parser = new XlsParser();
     ]);
     countSheet.addRow([
       client,
+      industry,
       type,
+      sku,
       ...monthes.map((d) => {
         if (!output["count"][i]) {
           return "";
@@ -129,7 +149,9 @@ var parser = new XlsParser();
     ]);
     totalSheet.addRow([
       client,
+      industry,
       type,
+      sku,
       ...monthes.map((d) => {
         if (!output["total"][i]) {
           return "";
