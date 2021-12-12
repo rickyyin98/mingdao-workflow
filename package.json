@@ -1,0 +1,17 @@
+{
+  "name": "mingdao-workflow",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "bung",
+  "license": "ISC",
+  "dependencies": {
+    "exceljs": "^4.3.0",
+    "moment": "^2.29.1",
+    "moment-range": "^4.0.2",
+    "read-excel-file": "^5.2.23"
+  }
+}
