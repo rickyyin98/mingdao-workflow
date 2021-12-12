@@ -131,6 +131,7 @@ var parser = new XlsParser();
   priceSheet.addRow(["", "行业", "客户类型", "SKU", ...monthes]);
   countSheet.addRow(["", "行业", "客户类型", "SKU", ...monthes]);
   totalSheet.addRow(["", "行业", "客户类型", "SKU", ...monthes]);
+  clientMRR.addRow(["", ...monthes]);
   data.forEach(([client, industry, type, sku, _], i) => {
     priceSheet.addRow([
       client,
