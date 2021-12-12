@@ -12,12 +12,13 @@ var parser = new XlsParser();
   const inputPath = path.normalize(input);
   const inputWorkbook = parser.parseXls2Json(inputPath, { isNested: true });
   let data = inputWorkbook[0].map((r) => Object.values(r));
-//   data = data.slice(1);
+  //   data = data.slice(1);
   const output = {
     price: {},
     total: {},
     count: {},
   };
+  
   const startDate = moment("2020-07", "YYYY-MM").toDate().valueOf();
   const endDate = moment("2022-12", "YYYY-MM").toDate().valueOf();
   const dateIndex = 4;
@@ -26,8 +27,13 @@ var parser = new XlsParser();
     const mv = m.toDate().valueOf();
     return mv >= startDate && mv <= endDate;
   });
+  const groupedTotal = {};
+  const clientMeta = {}
   data = data.map(
     ([client, industry, type, sku, date, monthes, count, price], i) => {
+        // clientMeta[client] = {
+
+        // }
       const m = moment(date, "YYYY-MM-DD");
       const theMonth = m.format("YYYY-MM");
       if (!output["price"][i]) {
@@ -63,11 +69,19 @@ var parser = new XlsParser();
           output["price"][i][client][m] = price;
           output["count"][i][client][m] = count;
           output["total"][i][client][m] = price * count;
+          if(!groupedTotal[client]) {
+            groupedTotal[client] = {}
+          }
+          groupedTotal[client][m] = price * count;
         }
       } else {
         output["count"][i][client][theMonth] = count;
         output["price"][i][client][theMonth] = price;
         output["total"][i][client][theMonth] = price * count;
+        if(!groupedTotal[client]) {
+            groupedTotal[client] = {}
+          }
+        groupedTotal[client][theMonth] = price * count;
       }
 
       return [
@@ -113,6 +127,7 @@ var parser = new XlsParser();
   const priceSheet = workbook.addWorksheet("price");
   const countSheet = workbook.addWorksheet("count");
   const totalSheet = workbook.addWorksheet("total");
+  const clientMRR = workbook.addWorksheet("客户维度MRR");
   priceSheet.addRow(["", "行业", "客户类型", "SKU", ...monthes]);
   countSheet.addRow(["", "行业", "客户类型", "SKU", ...monthes]);
   totalSheet.addRow(["", "行业", "客户类型", "SKU", ...monthes]);
@@ -162,6 +177,23 @@ var parser = new XlsParser();
         return output["total"][i][client][d] || "";
       }),
     ]);
+  });
+
+  Object.entries(groupedTotal).forEach(([key, values]) => {
+    clientMRR.addRow([
+        key,
+        ...monthes.map((m) => {
+          if (!groupedTotal[key]) {
+            return "";
+          }
+          if (!groupedTotal[key][m]) {
+            return "";
+          }
+
+          return groupedTotal[key][m] || "";
+        }),
+      ]);
+
   });
 
   await workbook.xlsx.writeFile(`output.xlsx`);
