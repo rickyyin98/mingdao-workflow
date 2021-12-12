@@ -31,9 +31,9 @@ var parser = new XlsParser();
   const clientMeta = {}
   data = data.map(
     ([client, industry, type, sku, date, monthes, count, price], i) => {
-        // clientMeta[client] = {
-
-        // }
+        clientMeta[client] = {
+            industry, type, sku
+        }
       const m = moment(date, "YYYY-MM-DD");
       const theMonth = m.format("YYYY-MM");
       if (!output["price"][i]) {
@@ -131,7 +131,7 @@ var parser = new XlsParser();
   priceSheet.addRow(["", "行业", "客户类型", "SKU", ...monthes]);
   countSheet.addRow(["", "行业", "客户类型", "SKU", ...monthes]);
   totalSheet.addRow(["", "行业", "客户类型", "SKU", ...monthes]);
-  clientMRR.addRow(["", ...monthes]);
+  clientMRR.addRow(["","行业", "客户类型", "SKU",  ...monthes]);
   data.forEach(([client, industry, type, sku, _], i) => {
     priceSheet.addRow([
       client,
@@ -183,6 +183,9 @@ var parser = new XlsParser();
   Object.entries(groupedTotal).forEach(([key, values]) => {
     clientMRR.addRow([
         key,
+        clientMeta[key].industry,
+        clientMeta[key].type,
+        clientMeta[key].sku,
         ...monthes.map((m) => {
           if (!groupedTotal[key]) {
             return "";
