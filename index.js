@@ -1,14 +1,17 @@
 const input = process.argv[2];
 const Excel = require("exceljs");
 const path = require("path");
-const readXlsxFile = require("read-excel-file/node");
 const Moment = require("moment");
 const MomentRange = require("moment-range");
 const moment = MomentRange.extendMoment(Moment);
+const { XlsParser } = require('simple-excel-to-json')
 
+var parser = new XlsParser();
 (async () => {
   const workbook = new Excel.Workbook();
-  let data = await readXlsxFile(path.normalize(input));
+  const inputPath = path.normalize(input);
+  const inputWorkbook = parser.parseXls2Json(inputPath, { isNested: true });
+  let data = inputWorkbook[0].map( r => Object.values(r));
   data = data.slice(1);
   const output = {
     price: {},
